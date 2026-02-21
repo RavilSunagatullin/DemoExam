@@ -1,0 +1,34 @@
+﻿<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Redirecting...</title>
+
+        <script>
+            // Runtime config (override if needed before auth check)
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+            window.APP_ROUTES = Object.assign(
+                {
+                    home: "/home.html",
+                    login: "/login.html",
+                },
+                window.APP_ROUTES || {},
+            );
+        </script>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import { isAuthed } from "/assets/pocketbase.core.js";
+
+            const { home, login } = window.APP_ROUTES;
+            const target = isAuthed() ? home : login;
+
+            // Avoid accidental redirect loop if target points to current page.
+            if (target && target !== location.pathname) {
+                location.replace(target);
+            }
+        </script>
+    </head>
+    <body></body>
+</html>

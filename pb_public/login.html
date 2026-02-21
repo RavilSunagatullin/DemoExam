@@ -1,0 +1,144 @@
+﻿<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Login</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+            window.APP_ROUTES = Object.assign(
+                {
+                    home: "/home.html",
+                    index: "/",
+                },
+                window.APP_ROUTES || {},
+            );
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .auth-wrap {
+                min-height: 100vh;
+                display: grid;
+                place-items: center;
+                padding: 1rem;
+            }
+
+            .auth-card {
+                width: min(420px, 100%);
+            }
+
+            .error-text {
+                color: #b91c1c;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="auth-wrap" x-data="loginPage" x-init="init()">
+            <article class="auth-card">
+                <header>
+                    <h1>Вход</h1>
+                    <p><small>Авторизация по name и password</small></p>
+                </header>
+
+                <form @submit.prevent="submit()">
+                    <label for="name">Name</label>
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        autocomplete="username"
+                        required
+                        x-model.trim="form.name"
+                        :disabled="loading"
+                    />
+
+                    <label for="password">Password</label>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        autocomplete="current-password"
+                        required
+                        x-model="form.password"
+                        :disabled="loading"
+                    />
+
+                    <button
+                        type="submit"
+                        :aria-busy="loading"
+                        :disabled="loading"
+                    >
+                        <span x-show="!loading">Войти</span>
+                        <span x-show="loading" x-cloak>Входим...</span>
+                    </button>
+                </form>
+
+                <p
+                    ><small
+                        >Нет аккаунта?
+                        <a href="/register.html">Регистрация</a></small
+                    ></p
+                >
+                <p class="error-text" x-show="error" x-text="error" x-cloak></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import { isAuthed, login } from "/assets/pocketbase.core.js";
+
+            const registerLoginPage = () => {
+                Alpine.data("loginPage", () => ({
+                    loading: false,
+                    error: "",
+                    form: {
+                        name: "",
+                        password: "",
+                    },
+                    init() {
+                        if (isAuthed()) {
+                            location.replace(window.APP_ROUTES.home);
+                        }
+                    },
+                    async submit() {
+                        this.error = "";
+
+                        if (!this.form.name || !this.form.password) {
+                            this.error = "Введите name и password";
+                            return;
+                        }
+
+                        this.loading = true;
+                        try {
+                            await login(
+                                this.form.name,
+                                this.form.password,
+                                "users",
+                            );
+                            location.replace(window.APP_ROUTES.home);
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка входа";
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerLoginPage();
+            } else {
+                document.addEventListener("alpine:init", registerLoginPage, {
+                    once: true,
+                });
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>

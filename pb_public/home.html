@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Home</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+            window.APP_ROUTES = Object.assign(
+                {
+                    login: "/login.html",
+                },
+                window.APP_ROUTES || {},
+            );
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .page {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+
+            .cards {
+                display: grid;
+                gap: 1rem;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            }
+
+            .value {
+                font-size: 1.75rem;
+                font-weight: 700;
+                line-height: 1.1;
+            }
+
+            .muted {
+                opacity: 0.75;
+            }
+
+            .mono {
+                font-family:
+                    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-size: 0.85rem;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page" x-data="homePage" x-init="init()">
+            <nav>
+                <ul>
+                    <li><a href="/home.html">Главная</a></li>
+                </ul>
+                <ul>
+                    <li
+                        ><button
+                            type="button"
+                            class="secondary"
+                            :aria-busy="loading"
+                            :disabled="loading"
+                            @click="refresh()"
+                            >Обновить</button
+                        ></li
+                    >
+                    <li
+                        ><button
+                            type="button"
+                            class="secondary"
+                            @click="doLogout()"
+                            >Logout</button
+                        ></li
+                    >
+                </ul>
+            </nav>
+
+            <article>
+                <header>
+                    <h1>Главная</h1>
+                    <p><small>Шаблон страницы с карточками и методами загрузки данных</small></p>
+                </header>
+
+                <section class="cards">
+                    <article>
+                        <h3>Пользователи</h3>
+                        <p class="value" x-text="cards.usersCount"></p>
+                        <p class="muted">Всего записей в коллекции `users`</p>
+                    </article>
+
+                    <article>
+                        <h3>Заказы</h3>
+                        <p class="value" x-text="cards.ordersCount"></p>
+                        <p class="muted">Пример карточки под любую коллекцию</p>
+                    </article>
+
+                    <article>
+                        <h3>Последнее обновление</h3>
+                        <p class="value" x-text="cards.updatedAt"></p>
+                        <p class="muted">Локальное время обновления данных</p>
+                    </article>
+                </section>
+            </article>
+
+            <article>
+                <header><h3>Debug payload</h3></header>
+                <pre class="mono"><code x-text="debugJson"></code></pre>
+            </article>
+
+            <article x-show="error" x-cloak>
+                <header><strong>Ошибка</strong></header>
+                <p x-text="error"></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import { requireAuth, logout, list } from "/assets/pocketbase.core.js";
+
+            requireAuth({ loginPath: window.APP_ROUTES.login });
+
+            const registerHomePage = () => {
+                Alpine.data("homePage", () => ({
+                    loading: false,
+                    error: "",
+                    cards: {
+                        usersCount: "0",
+                        ordersCount: "-",
+                        updatedAt: "-",
+                    },
+                    debugJson: "{}",
+
+                    async init() {
+                        await this.refresh();
+                    },
+
+                    async refresh() {
+                        this.loading = true;
+                        this.error = "";
+
+                        try {
+                            const data = await this.loadDashboardData();
+
+                            this.cards.usersCount = String(data.usersCount ?? 0);
+                            this.cards.ordersCount = String(data.ordersCount ?? "-");
+                            this.cards.updatedAt = new Date().toLocaleTimeString();
+                            this.debugJson = JSON.stringify(data, null, 2);
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка загрузки данных";
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+
+                    // Главный шаблонный метод: собирает данные для главной.
+                    async loadDashboardData() {
+                        const [usersCount, ordersCount] = await Promise.all([
+                            this.getCollectionCount("users"),
+                            this.getCollectionCount("orders"), // замените на вашу коллекцию
+                        ]);
+
+                        return {
+                            usersCount,
+                            ordersCount,
+                        };
+                    },
+
+                    // Универсальный шаблон получения количества записей.
+                    async getCollectionCount(collectionName) {
+                        try {
+                            const result = await list(collectionName, {
+                                page: 1,
+                                perPage: 1,
+                            });
+                            return result?.totalItems ?? 0;
+                        } catch (_) {
+                            // Если коллекции еще нет, не роняем страницу.
+                            return 0;
+                        }
+                    },
+
+                    doLogout() {
+                        logout();
+                        location.replace(window.APP_ROUTES.login);
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerHomePage();
+            } else {
+                document.addEventListener("alpine:init", registerHomePage, {
+                    once: true,
+                });
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>

@@ -1361,15 +1361,13 @@
             );
         }
         async listExternalAuths(e, t) {
-            return this.client
-                .collection("_externalAuths")
-                .getFullList(
-                    Object.assign({}, t, {
-                        filter: this.client.filter("recordRef = {:id}", {
-                            id: e,
-                        }),
+            return this.client.collection("_externalAuths").getFullList(
+                Object.assign({}, t, {
+                    filter: this.client.filter("recordRef = {:id}", {
+                        id: e,
                     }),
-                );
+                }),
+            );
         }
         async unlinkExternalAuth(e, t, s) {
             const i = await this.client

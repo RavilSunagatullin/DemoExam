@@ -1,0 +1,138 @@
+﻿<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Home</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+            window.APP_ROUTES = Object.assign(
+                {
+                    index: "/",
+                    login: "/login.html",
+                },
+                window.APP_ROUTES || {},
+            );
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .page {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+
+            .mono {
+                font-family:
+                    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-size: 0.85rem;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page" x-data="homePage" x-init="init()">
+            <nav>
+                <ul>
+                    <li><a href="/home.html">Главная</a></li>
+                </ul>
+                <ul>
+                    <li
+                        ><button
+                            type="button"
+                            class="secondary"
+                            @click="doLogout()"
+                            >Logout</button
+                        ></li
+                    >
+                </ul>
+            </nav>
+
+            <article>
+                <header>
+                    <h1>Сессия</h1>
+                    <p
+                        ><small
+                            >Текущие данные авторизованного пользователя</small
+                        ></p
+                    >
+                </header>
+
+                <p
+                    ><strong>isAuthed:</strong>
+                    <span x-text="isAuthenticated ? 'true' : 'false'"></span
+                ></p>
+
+                <h3>Record</h3>
+                <pre class="mono"><code x-text="recordJson"></code></pre>
+
+                <h3>Token</h3>
+                <pre
+                    class="mono"
+                ><code x-text="token || '(empty)'"></code></pre>
+            </article>
+
+            <article x-show="error" x-cloak>
+                <header><strong>Ошибка</strong></header>
+                <p x-text="error"></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import {
+                requireAuth,
+                isAuthed,
+                authRecord,
+                authToken,
+                logout,
+            } from "/assets/pocketbase.core.js";
+
+            // Enforce auth immediately on page load.
+            requireAuth({ loginPath: window.APP_ROUTES.login });
+
+            const registerHomePage = () => {
+                Alpine.data("homePage", () => ({
+                    isAuthenticated: false,
+                    token: "",
+                    recordJson: "{}",
+                    error: "",
+                    init() {
+                        try {
+                            this.isAuthenticated = isAuthed();
+                            this.token = authToken();
+                            this.recordJson = JSON.stringify(
+                                authRecord(),
+                                null,
+                                2,
+                            );
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка инициализации";
+                        }
+                    },
+                    doLogout() {
+                        logout();
+                        location.replace(window.APP_ROUTES.login);
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerHomePage();
+            } else {
+                document.addEventListener("alpine:init", registerHomePage, {
+                    once: true,
+                });
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>
