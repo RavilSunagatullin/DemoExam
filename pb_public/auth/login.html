@@ -3,13 +3,13 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Login</title>
+        <title>Вход</title>
 
         <script>
             window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
             window.APP_ROUTES = Object.assign(
                 {
-                    home: "/home.html",
+                    home: "/views/home.html",
                     index: "/",
                 },
                 window.APP_ROUTES || {},
@@ -43,11 +43,11 @@
             <article class="auth-card">
                 <header>
                     <h1>Вход</h1>
-                    <p><small>Авторизация по name и password</small></p>
+                    <p><small>Авторизация по логину и паролю</small></p>
                 </header>
 
                 <form @submit.prevent="submit()">
-                    <label for="name">Name</label>
+                    <label for="name">Логин</label>
                     <input
                         id="name"
                         name="name"
@@ -58,7 +58,7 @@
                         :disabled="loading"
                     />
 
-                    <label for="password">Password</label>
+                    <label for="password">Пароль</label>
                     <input
                         id="password"
                         name="password"
@@ -79,12 +79,13 @@
                     </button>
                 </form>
 
-                <p
-                    ><small
-                        >Нет аккаунта?
-                        <a href="/register.html">Регистрация</a></small
-                    ></p
-                >
+                <p>
+                    <small>
+                        Нет аккаунта?
+                        <a href="/auth/register.html">Регистрация</a>
+                    </small>
+                </p>
+
                 <p class="error-text" x-show="error" x-text="error" x-cloak></p>
             </article>
         </main>
@@ -110,7 +111,7 @@
                         this.error = "";
 
                         if (!this.form.name || !this.form.password) {
-                            this.error = "Введите name и password";
+                            this.error = "Введите логин и пароль";
                             return;
                         }
 

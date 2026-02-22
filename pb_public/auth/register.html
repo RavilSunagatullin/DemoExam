@@ -1,16 +1,16 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ru" data-theme="light">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Register</title>
+        <title>Регистрация</title>
 
         <script>
             window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
             window.APP_ROUTES = Object.assign(
                 {
                     home: "/home.html",
-                    login: "/login.html",
+                    login: "/auth/login.html",
                 },
                 window.APP_ROUTES || {},
             );
@@ -118,12 +118,13 @@
                     </button>
                 </form>
 
-                <p
-                    ><small
-                        >Уже есть аккаунт?
-                        <a href="/login.html">Войти</a></small
-                    ></p
-                >
+                <p>
+                    <small>
+                        Уже есть аккаунт?
+                        <a href="/auth/login.html">Войти</a>
+                    </small>
+                </p>
+
                 <p class="error-text" x-show="error" x-text="error" x-cloak></p>
             </article>
         </main>
@@ -150,18 +151,18 @@
                     }
                 },
                 validate() {
-                    if (!this.form.username) return "Введите login";
+                    if (!this.form.username) return "Введите логин";
                     if (this.form.username.length > 250)
-                        return "Login не должен превышать 250 символов";
+                        return "Логин не должен превышать 250 символов";
                     if (!this.form.password || this.form.password.length < 6)
-                        return "Password минимум 6 символов";
+                        return "Пароль минимум 6 символов";
                     if (this.form.password.length > 250)
-                        return "Password не должен превышать 250 символов";
+                        return "Пароль не должен превышать 250 символов";
                     if (!fioRegex.test(this.form.userFIO))
                         return "ФИО должно быть на кириллице и содержать минимум 2 слова";
                     if (!this.form.phone) return "Введите телефон";
                     if (this.form.phone.length > 250)
-                        return "Phone не должен превышать 250 символов";
+                        return "Телефон не должен превышать 250 символов";
                     if (
                         !/^\+7 \(\d{3}\) \d{3} \d{2}-\d{2}$/.test(
                             this.form.phone,

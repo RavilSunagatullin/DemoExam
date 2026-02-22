@@ -1,0 +1,116 @@
+﻿<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Примеры PocketBase</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            .page {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+
+            .cards {
+                display: grid;
+                gap: 1rem;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            }
+
+            code,
+            pre {
+                font-size: 0.9rem;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page">
+            <nav>
+                <ul>
+                    <li><a href="/views/home.html">Главная</a></li>
+                </ul>
+            </nav>
+
+            <article>
+                <header>
+                    <h1>Примеры: PocketBase</h1>
+                    <p
+                        >Простые рабочие примеры для коллекции
+                        <code>example</code>.</p
+                    >
+                </header>
+                <p>
+                    Настройка SDK использует <code>window.PB_BASE_URL</code> и
+                    <code>/assets/pocketbase.core.js</code>.
+                </p>
+            </article>
+
+            <section class="cards">
+                <article>
+                    <h3>1) Пример чтения</h3>
+                    <p>Чтение записей из коллекции <code>example</code>.</p>
+                    <a role="button" href="/examples/read.html"
+                        >Открыть чтение</a
+                    >
+                </article>
+
+                <article>
+                    <h3>2) Пример создания</h3>
+                    <p>Создание записи в коллекции <code>example</code>.</p>
+                    <a role="button" href="/examples/create.html"
+                        >Открыть создание</a
+                    >
+                </article>
+
+                <article>
+                    <h3>3) Пример обновления</h3>
+                    <p
+                        >Обновление существующей записи в коллекции
+                        <code>example</code>.</p
+                    >
+                    <a role="button" href="/examples/update.html"
+                        >Открыть обновление</a
+                    >
+                </article>
+
+                <article>
+                    <h3>4) Пример удаления</h3>
+                    <p>Удаление записи из коллекции <code>example</code>.</p>
+                    <a role="button" href="/examples/delete.html"
+                        >Открыть удаление</a
+                    >
+                </article>
+
+                <article>
+                    <h3>5) Сессия</h3>
+                    <p
+                        >Просмотр текущего состояния авторизации, токена и
+                        записи пользователя.</p
+                    >
+                    <a role="button" href="/auth/session.html"
+                        >Открыть сессию</a
+                    >
+                </article>
+            </section>
+
+            <article>
+                <header><h3>Пример использования</h3></header>
+                <pre><code>&lt;script src="/assets/pocketbase.umd.js"&gt;&lt;/script&gt;
+&lt;script type="module"&gt;
+  import { list, create, update, remove } from "/assets/pocketbase.core.js";
+
+  const page = await list("example", { page: 1, perPage: 10 });
+  const created = await create("example", { name: "Ivan", age: 21, isMaried: false });
+  const updated = await update("example", created.id, { age: 22 });
+  await remove("example", created.id);
+&lt;/script&gt;</code></pre>
+            </article>
+        </main>
+    </body>
+</html>

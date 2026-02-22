@@ -1,0 +1,180 @@
+﻿<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Пример удаления</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .page {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page" x-data="deleteExamplePage" x-init="init()">
+            <nav>
+                <ul>
+                    <li><a href="/views/home.html">Главная</a></li>
+                    <li><a href="/examples/index.html">Примеры</a></li>
+                </ul>
+            </nav>
+
+            <article>
+                <header>
+                    <h1>Пример удаления</h1>
+                    <p
+                        >Удаление записи из коллекции <code>example</code> по
+                        ID.</p
+                    >
+                </header>
+
+                <form @submit.prevent="submitDelete()">
+                    <label for="recordId">ID записи</label>
+                    <input
+                        id="recordId"
+                        type="text"
+                        required
+                        x-model.trim="recordId"
+                        :disabled="loading"
+                    />
+                    <button type="submit" :disabled="loading">
+                        Удалить запись
+                    </button>
+                </form>
+            </article>
+
+            <article>
+                <header><h3>Записи</h3></header>
+                <figure>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Возраст</th>
+                                <th>isMaried</th>
+                                <th>Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in items" :key="item.id">
+                                <tr>
+                                    <td x-text="item.id"></td>
+                                    <td x-text="item.name || '-'"></td>
+                                    <td x-text="item.age ?? '-'"></td>
+                                    <td
+                                        x-text="item.isMaried ? 'true' : 'false'"
+                                    ></td>
+                                    <td>
+                                        <button
+                                            type="button"
+                                            @click="recordId = item.id"
+                                        >
+                                            Выбрать
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="!loading && !items.length" x-cloak>
+                                <td colspan="5">Нет записей</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </figure>
+            </article>
+
+            <article x-show="message" x-cloak>
+                <header><strong>Сообщение</strong></header>
+                <p x-text="message"></p>
+            </article>
+
+            <article x-show="error" x-cloak>
+                <header><strong>Ошибка</strong></header>
+                <p x-text="error"></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import { list, remove } from "/assets/pocketbase.core.js";
+
+            const registerDeleteExamplePage = () => {
+                Alpine.data("deleteExamplePage", () => ({
+                    loading: false,
+                    error: "",
+                    message: "",
+                    items: [],
+                    recordId: "",
+
+                    init() {
+                        this.load();
+                    },
+
+                    async load() {
+                        this.loading = true;
+                        this.error = "";
+                        try {
+                            const page = await list("example", {
+                                page: 1,
+                                perPage: 50,
+                                sort: "-created",
+                            });
+                            this.items = page?.items || [];
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка загрузки";
+                            this.items = [];
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+
+                    async submitDelete() {
+                        this.error = "";
+                        this.message = "";
+                        if (!this.recordId) {
+                            this.error = "Нужно указать ID записи";
+                            return;
+                        }
+
+                        this.loading = true;
+                        try {
+                            await remove("example", this.recordId);
+                            this.message = "Запись удалена";
+                            this.recordId = "";
+                            await this.load();
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка удаления";
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerDeleteExamplePage();
+            } else {
+                document.addEventListener(
+                    "alpine:init",
+                    registerDeleteExamplePage,
+                    {
+                        once: true,
+                    },
+                );
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>

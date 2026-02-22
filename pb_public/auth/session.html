@@ -3,14 +3,14 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Home</title>
+        <title>Главная</title>
 
         <script>
             window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
             window.APP_ROUTES = Object.assign(
                 {
                     index: "/",
-                    login: "/login.html",
+                    login: "/auth/login.html",
                 },
                 window.APP_ROUTES || {},
             );
@@ -42,17 +42,17 @@
         <main class="page" x-data="homePage" x-init="init()">
             <nav>
                 <ul>
-                    <li><a href="/home.html">Главная</a></li>
+                    <li><a href="/views/home.html">Главная</a></li>
                 </ul>
                 <ul>
-                    <li
-                        ><button
+                    <li>
+                        <button
                             type="button"
-                            class="secondary"
                             @click="doLogout()"
-                            >Logout</button
-                        ></li
-                    >
+                        >
+                            Выйти
+                        </button>
+                    </li>
                 </ul>
             </nav>
 
@@ -66,18 +66,18 @@
                     >
                 </header>
 
-                <p
-                    ><strong>isAuthed:</strong>
-                    <span x-text="isAuthenticated ? 'true' : 'false'"></span
-                ></p>
+                <p>
+                    <strong>isAuthed:</strong>
+                    <span x-text="isAuthenticated ? 'true' : 'false'"></span>
+                </p>
 
-                <h3>Record</h3>
+                <h3>Запись</h3>
                 <pre class="mono"><code x-text="recordJson"></code></pre>
 
-                <h3>Token</h3>
+                <h3>Токен</h3>
                 <pre
                     class="mono"
-                ><code x-text="token || '(empty)'"></code></pre>
+                ><code x-text="token || '(пусто)'"></code></pre>
             </article>
 
             <article x-show="error" x-cloak>

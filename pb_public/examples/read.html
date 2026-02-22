@@ -1,0 +1,182 @@
+﻿<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Пример чтения</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .page {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+
+            .mono {
+                font-family:
+                    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-size: 0.85rem;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page" x-data="readExamplePage" x-init="init()">
+            <nav>
+                <ul>
+                    <li><a href="/home.html">Главная</a></li>
+                    <li><a href="/examples/index.html">Примеры</a></li>
+                </ul>
+                <ul>
+                    <li>
+                        <button
+                            type="button"
+                            :aria-busy="loading"
+                            :disabled="loading"
+                            @click="load()"
+                        >
+                            Обновить
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+
+            <article>
+                <header>
+                    <h1>Пример чтения</h1>
+                    <p>
+                        Чтение коллекции <code>example</code> через helper
+                        <code>list()</code>.
+                    </p>
+                </header>
+
+                <label for="searchName">Фильтр по имени</label>
+                <input
+                    id="searchName"
+                    type="text"
+                    placeholder="Например: Ivan"
+                    x-model.trim="searchName"
+                    :disabled="loading"
+                />
+            </article>
+
+            <article>
+                <header>
+                    <h3>Результат: <span x-text="totalItems"></span></h3>
+                </header>
+                <figure>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Возраст</th>
+                                <th>В браке (isMaried)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in items" :key="item.id">
+                                <tr>
+                                    <td x-text="item.id"></td>
+                                    <td x-text="item.name || '-'"></td>
+                                    <td x-text="item.age ?? '-'"></td>
+                                    <td
+                                        x-text="item.isMaried ? 'true' : 'false'"
+                                    ></td>
+                                </tr>
+                            </template>
+                            <tr x-show="!loading && !items.length" x-cloak>
+                                <td colspan="4">Записей нет</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </figure>
+            </article>
+
+            <article>
+                <header><h3>Отладочный JSON</h3></header>
+                <pre class="mono"><code x-text="debug"></code></pre>
+            </article>
+
+            <article x-show="error" x-cloak>
+                <header><strong>Ошибка</strong></header>
+                <p x-text="error"></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import { list, filter } from "/assets/pocketbase.core.js";
+
+            const registerReadExamplePage = () => {
+                Alpine.data("readExamplePage", () => ({
+                    loading: false,
+                    error: "",
+                    searchName: "",
+                    items: [],
+                    totalItems: 0,
+                    debug: "{}",
+
+                    init() {
+                        this.load();
+                        this.$watch("searchName", () => this.load());
+                    },
+
+                    async load() {
+                        this.loading = true;
+                        this.error = "";
+                        try {
+                            const filterExpr = this.searchName
+                                ? filter("name ~ {:name}", {
+                                      name: this.searchName,
+                                  })
+                                : "";
+
+                            const page = await list("example", {
+                                page: 1,
+                                perPage: 50,
+                                filter: filterExpr,
+                                sort: "-created",
+                            });
+
+                            this.items = page?.items || [];
+                            this.totalItems = page?.totalItems || 0;
+                            this.debug = JSON.stringify(page, null, 2);
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка чтения";
+                            this.items = [];
+                            this.totalItems = 0;
+                            this.debug = "{}";
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerReadExamplePage();
+            } else {
+                document.addEventListener(
+                    "alpine:init",
+                    registerReadExamplePage,
+                    {
+                        once: true,
+                    },
+                );
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>

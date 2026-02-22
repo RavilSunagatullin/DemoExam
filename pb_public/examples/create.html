@@ -1,0 +1,202 @@
+﻿<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Пример создания</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .page {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page" x-data="createExamplePage" x-init="init()">
+            <nav>
+                <ul>
+                    <li><a href="/views/home.html">Главная</a></li>
+                    <li><a href="/examples/index.html">Примеры</a></li>
+                </ul>
+            </nav>
+
+            <article>
+                <header>
+                    <h1>Пример создания</h1>
+                    <p>Создание записи в коллекции <code>example</code>.</p>
+                </header>
+
+                <form @submit.prevent="submitCreate()">
+                    <label for="name">Имя</label>
+                    <input
+                        id="name"
+                        type="text"
+                        required
+                        x-model.trim="form.name"
+                        :disabled="loading"
+                    />
+
+                    <label for="age">Возраст</label>
+                    <input
+                        id="age"
+                        type="number"
+                        min="0"
+                        x-model.number="form.age"
+                        :disabled="loading"
+                    />
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            x-model="form.isMaried"
+                            :disabled="loading"
+                        />
+                        В браке (isMaried)
+                    </label>
+
+                    <button
+                        type="submit"
+                        :aria-busy="loading"
+                        :disabled="loading"
+                    >
+                        Создать запись
+                    </button>
+                </form>
+            </article>
+
+            <article>
+                <header>
+                    <h3>Последние записи</h3>
+                </header>
+                <figure>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Возраст</th>
+                                <th>isMaried</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in items" :key="item.id">
+                                <tr>
+                                    <td x-text="item.id"></td>
+                                    <td x-text="item.name || '-'"></td>
+                                    <td x-text="item.age ?? '-'"></td>
+                                    <td
+                                        x-text="item.isMaried ? 'true' : 'false'"
+                                    ></td>
+                                </tr>
+                            </template>
+                            <tr x-show="!loading && !items.length" x-cloak>
+                                <td colspan="4">Нет записей</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </figure>
+            </article>
+
+            <article x-show="message" x-cloak>
+                <header><strong>Сообщение</strong></header>
+                <p x-text="message"></p>
+            </article>
+
+            <article x-show="error" x-cloak>
+                <header><strong>Ошибка</strong></header>
+                <p x-text="error"></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import { list, create } from "/assets/pocketbase.core.js";
+
+            const registerCreateExamplePage = () => {
+                Alpine.data("createExamplePage", () => ({
+                    loading: false,
+                    error: "",
+                    message: "",
+                    items: [],
+                    form: {
+                        name: "",
+                        age: 18,
+                        isMaried: false,
+                    },
+
+                    init() {
+                        this.load();
+                    },
+
+                    async load() {
+                        this.loading = true;
+                        this.error = "";
+                        try {
+                            const page = await list("example", {
+                                page: 1,
+                                perPage: 20,
+                                sort: "-created",
+                            });
+                            this.items = page?.items || [];
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка загрузки";
+                            this.items = [];
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+
+                    async submitCreate() {
+                        this.error = "";
+                        this.message = "";
+                        this.loading = true;
+
+                        try {
+                            await create("example", {
+                                name: this.form.name,
+                                age: Number(this.form.age) || 0,
+                                isMaried: !!this.form.isMaried,
+                            });
+
+                            this.form = {
+                                name: "",
+                                age: 18,
+                                isMaried: false,
+                            };
+                            this.message = "Запись создана";
+                            await this.load();
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка создания";
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerCreateExamplePage();
+            } else {
+                document.addEventListener(
+                    "alpine:init",
+                    registerCreateExamplePage,
+                    {
+                        once: true,
+                    },
+                );
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>
