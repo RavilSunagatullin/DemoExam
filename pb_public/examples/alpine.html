@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Alpine.js: мини-дока</title>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .page {
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+
+            .code {
+                font-size: 0.85rem;
+                overflow-x: auto;
+                white-space: pre;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page">
+            <nav>
+                <ul>
+                    <li><a href="/views/home.html">Главная</a></li>
+                    <li><a href="/examples/index.html">Примеры</a></li>
+                </ul>
+            </nav>
+
+            <article>
+                <header>
+                    <h1>Alpine.js: очень кратко</h1>
+                    <p>
+                        Мини-дока по
+                        <a
+                            href="https://alpinejs.dev/start-here"
+                            target="_blank"
+                            rel="noopener"
+                            >Start Here</a
+                        >.
+                    </p>
+                </header>
+                <p>
+                    Основная идея: пишем обычный HTML и добавляем директивы
+                    Alpine (<code>x-data</code>, <code>x-model</code>,
+                    <code>x-show</code>, <code>x-for</code>, <code>@click</code>).
+                </p>
+            </article>
+
+            <article>
+                <header><h3>Как работает Alpine (в двух словах)</h3></header>
+                <ol>
+                    <li>
+                        Скрипт Alpine загружается с <code>defer</code> и после
+                        этого сканирует DOM.
+                    </li>
+                    <li>
+                        Каждый блок с <code>x-data</code> становится локальным
+                        компонентом со своим состоянием.
+                    </li>
+                    <li>
+                        Директивы (<code>x-text</code>, <code>x-show</code>,
+                        <code>x-model</code>, <code>x-for</code>) связывают
+                        состояние и разметку.
+                    </li>
+                    <li>
+                        События через <code>@click</code> и другие обработчики
+                        меняют состояние.
+                    </li>
+                    <li>
+                        Alpine реактивно обновляет только нужные части DOM.
+                    </li>
+                </ol>
+                <pre class="code"><code>&lt;div x-data="{ count: 0 }"&gt;
+  &lt;button @click="count++"&gt;+&lt;/button&gt;
+  &lt;span x-text="count"&gt;&lt;/span&gt;
+&lt;/div&gt;</code></pre>
+            </article>
+
+            <article>
+                <header><h3>1) Подключение</h3></header>
+                <pre class="code"><code>&lt;!-- Локально (в этом проекте) --&gt;
+&lt;script src="/assets/alpine.min.js" defer&gt;&lt;/script&gt;
+
+&lt;!-- CDN (из доки) --&gt;
+&lt;script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"&gt;&lt;/script&gt;</code></pre>
+            </article>
+
+            <article x-data="{ name: 'Иван' }">
+                <header><h3>2) Реактивный текст: x-data + x-model + x-text</h3></header>
+                <input type="text" x-model="name" placeholder="Введите имя" />
+                <p>Привет, <strong x-text="name"></strong>!</p>
+                <pre class="code"><code>&lt;div x-data="{ name: 'Иван' }"&gt;
+  &lt;input x-model="name" /&gt;
+  &lt;p&gt;Привет, &lt;strong x-text="name"&gt;&lt;/strong&gt;!&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+            </article>
+
+            <article x-data="{ count: 0 }">
+                <header><h3>3) События: @click</h3></header>
+                <button type="button" @click="count++">+</button>
+                <button type="button" class="secondary" @click="count = 0">
+                    Сброс
+                </button>
+                <p>Счетчик: <strong x-text="count"></strong></p>
+                <pre class="code"><code>&lt;div x-data="{ count: 0 }"&gt;
+  &lt;button @click="count++"&gt;+&lt;/button&gt;
+  &lt;button @click="count = 0"&gt;Сброс&lt;/button&gt;
+  &lt;p x-text="count"&gt;&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+            </article>
+
+            <article x-data="{ open: false }">
+                <header><h3>4) Условный вывод: x-show</h3></header>
+                <button type="button" @click="open = !open">
+                    Показать/скрыть
+                </button>
+                <p x-show="open" x-transition x-cloak>
+                    Этот блок управляется через x-show.
+                </p>
+                <pre class="code"><code>&lt;div x-data="{ open: false }"&gt;
+  &lt;button @click="open = !open"&gt;Toggle&lt;/button&gt;
+  &lt;p x-show="open" x-transition&gt;Контент&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+            </article>
+
+            <article
+                x-data="{
+                    q: '',
+                    users: ['Анна', 'Борис', 'Вера', 'Глеб'],
+                    get filtered() {
+                        return this.users.filter((u) =>
+                            u.toLowerCase().includes(this.q.toLowerCase())
+                        );
+                    }
+                }"
+            >
+                <header><h3>5) Список: x-for + фильтр через x-model</h3></header>
+                <input type="text" x-model="q" placeholder="Фильтр по имени" />
+                <ul>
+                    <template x-for="user in filtered" :key="user">
+                        <li x-text="user"></li>
+                    </template>
+                </ul>
+                <pre class="code"><code>&lt;div x-data="{ q: '', users: [...] }"&gt;
+  &lt;input x-model="q" /&gt;
+  &lt;template x-for="user in filtered" :key="user"&gt;
+    &lt;li x-text="user"&gt;&lt;/li&gt;
+  &lt;/template&gt;
+&lt;/div&gt;</code></pre>
+            </article>
+        </main>
+
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>
