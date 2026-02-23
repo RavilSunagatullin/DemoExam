@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pico.css в примере</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .page {
+                max-width: 980px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+
+            .cards {
+                display: grid;
+                gap: 1rem;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            }
+
+            .docs-links {
+                margin: 0;
+                padding-left: 1.25rem;
+            }
+
+            .code-block {
+                font-size: 0.85rem;
+                overflow-x: auto;
+                white-space: pre;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="page" x-data="picoExamplePage" x-init="init()">
+            <nav>
+                <ul>
+                    <li><a href="/views/home.html">Главная</a></li>
+                    <li><a href="/examples/index.html">Примеры</a></li>
+                </ul>
+                <ul>
+                    <li>
+                        <button
+                            type="button"
+                            class="secondary"
+                            :aria-busy="loading"
+                            :disabled="loading"
+                            @click="load()"
+                        >
+                            Обновить записи
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+
+            <article>
+                <header>
+                    <h1>Pico.css: расширенный пример</h1>
+                    <p>
+                        Страница показывает паттерны из официальной документации
+                        Pico и одновременно подгружает данные коллекции
+                        <code>example</code> из PocketBase.
+                    </p>
+                </header>
+
+                <p>
+                    Pico работает в первую очередь через семантический HTML:
+                    заголовки, формы, таблицы и кнопки стилизуются без
+                    дополнительных утилитных классов.
+                </p>
+            </article>
+
+            <article>
+                <header><h3>Быстрый старт из доки</h3></header>
+                <p>
+                    Варианты подключения: локальный файл, CDN или пакетный
+                    менеджер. В проекте используется локальный файл из
+                    <code>/assets/pico.min.css</code>.
+                </p>
+
+                <pre class="code-block"><code>&lt;!-- Локально в проекте --&gt;
+&lt;link rel="stylesheet" href="/assets/pico.min.css" /&gt;
+
+&lt;!-- CDN --&gt;
+&lt;link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+/&gt;</code></pre>
+            </article>
+
+            <article>
+                <header><h3>Типографика и базовая семантика</h3></header>
+                <hgroup>
+                    <h4>Классический class-less подход</h4>
+                    <p>Обычные HTML-теги уже выглядят аккуратно.</p>
+                </hgroup>
+                <p>
+                    Имя коллекции: <code>example</code>. Базовый URL API:
+                    <code x-text="baseUrl"></code>
+                </p>
+                <blockquote>
+                    Используйте нативную семантику HTML, а Pico сделает
+                    остальное.
+                    <footer><cite>Подход Pico</cite></footer>
+                </blockquote>
+            </article>
+
+            <article>
+                <header><h3>Цветовые схемы и темы</h3></header>
+                <p>
+                    Переключение тем в Pico обычно делается через атрибут
+                    <code>data-theme</code> у тега <code>html</code>.
+                </p>
+                <fieldset role="group">
+                    <button type="button" @click="setTheme('light')">
+                        Светлая
+                    </button>
+                    <button
+                        type="button"
+                        class="secondary"
+                        @click="setTheme('dark')"
+                    >
+                        Темная
+                    </button>
+                    <button
+                        type="button"
+                        class="contrast"
+                        @click="setTheme('auto')"
+                    >
+                        Авто
+                    </button>
+                </fieldset>
+            </article>
+
+            <article>
+                <header><h3>Форма поиска</h3></header>
+                <form class="grid">
+                    <label for="search">
+                        Поиск по имени
+                        <input
+                            id="search"
+                            type="text"
+                            placeholder="Например: Иван"
+                            x-model.trim="searchName"
+                            :disabled="loading"
+                        />
+                    </label>
+                    <label for="limit">
+                        Строк на странице
+                        <select
+                            id="limit"
+                            x-model.number="perPage"
+                            :disabled="loading"
+                        >
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                        </select>
+                    </label>
+                </form>
+            </article>
+
+            <article>
+                <header>
+                    <h3>Таблица записей</h3>
+                    <p>Всего найдено: <strong x-text="totalItems"></strong></p>
+                </header>
+                <figure>
+                    <table class="striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Возраст</th>
+                                <th>isMaried</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in items" :key="item.id">
+                                <tr>
+                                    <td x-text="item.id"></td>
+                                    <td x-text="item.name || '-'"></td>
+                                    <td x-text="item.age ?? '-'"></td>
+                                    <td
+                                        x-text="item.isMaried ? 'true' : 'false'"
+                                    ></td>
+                                </tr>
+                            </template>
+                            <tr x-show="!loading && !items.length" x-cloak>
+                                <td colspan="4">Записи не найдены</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </figure>
+            </article>
+
+            <section class="cards">
+                <article>
+                    <h4>Кнопки</h4>
+                    <button type="button">Основная</button>
+                    <button type="button" class="secondary">Вторичная</button>
+                    <button type="button" class="contrast">Контрастная</button>
+                </article>
+
+                <article>
+                    <h4>Подсказки</h4>
+                    <button
+                        type="button"
+                        data-tooltip="Подсказка через data-атрибут"
+                    >
+                        Наведи курсор
+                    </button>
+                    <button
+                        type="button"
+                        class="secondary"
+                        data-tooltip="Пример справа"
+                        data-placement="right"
+                    >
+                        Подсказка справа
+                    </button>
+                </article>
+
+                <article>
+                    <h4>Прогресс</h4>
+                    <progress :value="items.length" :max="perPage"></progress>
+                    <small>
+                        Показано строк:
+                        <span x-text="items.length"></span>/<span
+                            x-text="perPage"
+                        ></span>
+                    </small>
+                </article>
+            </section>
+
+            <article>
+                <h4>Выпадающее меню (Dropdown)</h4>
+                <details class="dropdown">
+                    <summary>Быстрые ссылки</summary>
+                    <ul>
+                        <li>
+                            <a
+                                href="https://picocss.com/docs/dropdown"
+                                target="_blank"
+                                rel="noopener"
+                                >Раздел Dropdown</a
+                            >
+                        </li>
+                        <li>
+                            <a
+                                href="https://picocss.com/docs/modal"
+                                target="_blank"
+                                rel="noopener"
+                                >Раздел Modal</a
+                            >
+                        </li>
+                    </ul>
+                </details>
+            </article>
+
+            <article>
+                <header><h3>Аккордеон</h3></header>
+                <details name="pico-faq" open>
+                    <summary>Почему семантический HTML?</summary>
+                    <p>
+                        Меньше кастомного CSS, быстрее верстка и понятнее код.
+                    </p>
+                </details>
+                <details name="pico-faq">
+                    <summary>Как подключить Pico в этом проекте?</summary>
+                    <p>
+                        Через тег
+                        <code
+                            >&lt;link rel="stylesheet"
+                            href="/assets/pico.min.css" /&gt;</code
+                        >
+                        в секции <code>head</code>.
+                    </p>
+                </details>
+                <details name="pico-faq">
+                    <summary>Как здесь используется PocketBase?</summary>
+                    <p>
+                        Страница вызывает <code>list("example")</code> и
+                        отображает результат в таблице.
+                    </p>
+                </details>
+            </article>
+
+            <article>
+                <header><h3>Модальное окно</h3></header>
+                <p>
+                    Модальные окна в Pico строятся на нативном элементе
+                    <code>dialog</code>.
+                </p>
+                <button type="button" @click="openModal()">
+                    Открыть модалку
+                </button>
+
+                <dialog x-ref="docsModal">
+                    <article>
+                        <header>
+                            <button
+                                type="button"
+                                aria-label="Закрыть"
+                                rel="prev"
+                                @click="closeModal()"
+                            ></button>
+                            <h3>Пример модального окна</h3>
+                        </header>
+                        <p>
+                            Это демо на нативном <code>dialog</code> в стиле
+                            Pico.
+                        </p>
+                        <footer>
+                            <button
+                                type="button"
+                                class="secondary"
+                                @click="closeModal()"
+                            >
+                                Закрыть
+                            </button>
+                        </footer>
+                    </article>
+                </dialog>
+            </article>
+
+            <article>
+                <header><h3>Ссылки на документацию</h3></header>
+                <ul class="docs-links">
+                    <li>
+                        <a
+                            href="https://picocss.com/docs"
+                            target="_blank"
+                            rel="noopener"
+                            >Главная документации</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/quick-start"
+                            target="_blank"
+                            rel="noopener"
+                            >Быстрый старт</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/color-schemes"
+                            target="_blank"
+                            rel="noopener"
+                            >Цветовые схемы</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/class-less-version"
+                            target="_blank"
+                            rel="noopener"
+                            >Режим class-less</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/css-variables"
+                            target="_blank"
+                            rel="noopener"
+                            >CSS-переменные</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/forms"
+                            target="_blank"
+                            rel="noopener"
+                            >Формы</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/table"
+                            target="_blank"
+                            rel="noopener"
+                            >Таблица</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/dropdown"
+                            target="_blank"
+                            rel="noopener"
+                            >Выпадающее меню (Dropdown)</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/accordion"
+                            target="_blank"
+                            rel="noopener"
+                            >Аккордеон</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/modal"
+                            target="_blank"
+                            rel="noopener"
+                            >Модальное окно</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/group"
+                            target="_blank"
+                            rel="noopener"
+                            >Группа элементов</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/progress"
+                            target="_blank"
+                            rel="noopener"
+                            >Прогресс</a
+                        >
+                    </li>
+                    <li>
+                        <a
+                            href="https://picocss.com/docs/tooltip"
+                            target="_blank"
+                            rel="noopener"
+                            >Подсказки</a
+                        >
+                    </li>
+                </ul>
+            </article>
+
+            <article x-show="error" x-cloak>
+                <header><strong>Ошибка</strong></header>
+                <p x-text="error"></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import { list, filter } from "/assets/pocketbase.core.js";
+
+            const registerPicoExamplePage = () => {
+                Alpine.data("picoExamplePage", () => ({
+                    loading: false,
+                    error: "",
+                    items: [],
+                    totalItems: 0,
+                    searchName: "",
+                    perPage: 10,
+                    baseUrl: window.PB_BASE_URL || "",
+
+                    init() {
+                        this.load();
+                        this.$watch("searchName", () => this.load());
+                        this.$watch("perPage", () => this.load());
+                    },
+
+                    setTheme(theme) {
+                        if (theme === "auto") {
+                            document.documentElement.removeAttribute(
+                                "data-theme",
+                            );
+                            return;
+                        }
+                        document.documentElement.setAttribute(
+                            "data-theme",
+                            theme,
+                        );
+                    },
+
+                    openModal() {
+                        const modal = this.$refs.docsModal;
+                        if (modal?.showModal) {
+                            modal.showModal();
+                        }
+                    },
+
+                    closeModal() {
+                        const modal = this.$refs.docsModal;
+                        if (modal?.close) {
+                            modal.close();
+                        }
+                    },
+
+                    async load() {
+                        this.loading = true;
+                        this.error = "";
+                        try {
+                            const filterExpr = this.searchName
+                                ? filter("name ~ {:name}", {
+                                      name: this.searchName,
+                                  })
+                                : "";
+
+                            const page = await list("example", {
+                                page: 1,
+                                perPage: Number(this.perPage) || 10,
+                                filter: filterExpr,
+                                sort: "-created",
+                            });
+
+                            this.items = page?.items || [];
+                            this.totalItems = page?.totalItems || 0;
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка загрузки";
+                            this.items = [];
+                            this.totalItems = 0;
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerPicoExamplePage();
+            } else {
+                document.addEventListener(
+                    "alpine:init",
+                    registerPicoExamplePage,
+                    {
+                        once: true,
+                    },
+                );
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>
