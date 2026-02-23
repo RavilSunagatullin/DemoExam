@@ -30,7 +30,7 @@ pocketbase.exe [команда]
 ## Быстрый старт
 
 ```powershell
-.\pocketbase.exe serve --http=127.0.0.1:8090
+.\pocketbase.exe serve
 ```
 
 Откройте:
