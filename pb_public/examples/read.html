@@ -83,6 +83,7 @@
                                 <th>Имя</th>
                                 <th>Возраст</th>
                                 <th>В браке (isMaried)</th>
+                                <th>Пользовать (expand)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -94,10 +95,13 @@
                                     <td
                                         x-text="item.isMaried ? 'true' : 'false'"
                                     ></td>
+                                    <td
+                                        x-text="item.expand?.user?.username || '-'"
+                                    ></td>
                                 </tr>
                             </template>
                             <tr x-show="!loading && !items.length" x-cloak>
-                                <td colspan="4">Записей нет</td>
+                                <td colspan="5">Записей нет</td>
                             </tr>
                         </tbody>
                     </table>
@@ -148,6 +152,7 @@
                                 perPage: 50,
                                 filter: filterExpr,
                                 sort: "-created",
+                                expand: "user",
                             });
 
                             this.items = page?.items || [];
