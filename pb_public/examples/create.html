@@ -65,6 +65,19 @@
                         В браке (isMaried)
                     </label>
 
+                    <label for="user">Пользователь (relation: user)</label>
+                    <select
+                        id="user"
+                        x-model="form.user"
+                        :disabled="loading || !users.length"
+                        required
+                    >
+                        <option value="" disabled>Выберите пользователя</option>
+                        <template x-for="u in users" :key="u.id">
+                            <option :value="u.id" x-text="u.username"></option>
+                        </template>
+                    </select>
+
                     <button
                         type="submit"
                         :aria-busy="loading"
@@ -87,6 +100,7 @@
                                 <th>Имя</th>
                                 <th>Возраст</th>
                                 <th>isMaried</th>
+                                <th>Пользователь (relation)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -98,10 +112,17 @@
                                     <td
                                         x-text="item.isMaried ? 'true' : 'false'"
                                     ></td>
+                                    <td
+                                        x-text="
+                                            item.expand?.user
+                                                ? item.expand.user.username
+                                                : item.user || '-'
+                                        "
+                                    ></td>
                                 </tr>
                             </template>
                             <tr x-show="!loading && !items.length" x-cloak>
-                                <td colspan="4">Нет записей</td>
+                                <td colspan="5">Нет записей</td>
                             </tr>
                         </tbody>
                     </table>
@@ -124,65 +145,96 @@
             import { list, create } from "/assets/pocketbase.core.js";
 
             const registerCreateExamplePage = () => {
-                Alpine.data("createExamplePage", () => ({
-                    loading: false,
-                    error: "",
-                    message: "",
-                    items: [],
-                    form: {
-                        name: "",
-                        age: 18,
-                        isMaried: false,
-                    },
+                Alpine.data("createExamplePage", () => {
+                    return {
+                        loading: false,
+                        error: "",
+                        message: "",
+                        items: [],
+                        users: [],
+                        form: {
+                            name: "",
+                            age: 18,
+                            isMaried: false,
+                            user: "",
+                        },
 
-                    init() {
-                        this.load();
-                    },
+                        init() {
+                            this.loadUsers();
+                            this.load();
+                        },
 
-                    async load() {
-                        this.loading = true;
-                        this.error = "";
-                        try {
-                            const page = await list("example", {
-                                page: 1,
-                                perPage: 20,
-                                sort: "-created",
-                            });
-                            this.items = page?.items || [];
-                        } catch (e) {
-                            this.error = e?.message || "Ошибка загрузки";
-                            this.items = [];
-                        } finally {
-                            this.loading = false;
-                        }
-                    },
+                        async loadUsers() {
+                            this.usersError = "";
+                            try {
+                                const page = await list("users", {
+                                    page: 1,
+                                    perPage: 200,
+                                    sort: "username",
+                                    fields: "id,username,email,userFIO",
+                                });
+                                this.users = page?.items || [];
+                            } catch (e) {
+                                this.users = [];
+                                this.usersError =
+                                    e?.message ||
+                                    "Не удалось загрузить пользователей";
+                            }
+                        },
 
-                    async submitCreate() {
-                        this.error = "";
-                        this.message = "";
-                        this.loading = true;
+                        async load() {
+                            this.loading = true;
+                            this.error = "";
+                            try {
+                                const page = await list("example", {
+                                    page: 1,
+                                    perPage: 20,
+                                    sort: "-created",
+                                    expand: "user",
+                                });
+                                this.items = page?.items || [];
+                            } catch (e) {
+                                this.error = e?.message || "Ошибка загрузки";
+                                this.items = [];
+                            } finally {
+                                this.loading = false;
+                            }
+                        },
 
-                        try {
-                            await create("example", {
-                                name: this.form.name,
-                                age: Number(this.form.age) || 0,
-                                isMaried: !!this.form.isMaried,
-                            });
+                        async submitCreate() {
+                            this.error = "";
+                            this.message = "";
+                            this.loading = true;
 
-                            this.form = {
-                                name: "",
-                                age: 18,
-                                isMaried: false,
-                            };
-                            this.message = "Запись создана";
-                            await this.load();
-                        } catch (e) {
-                            this.error = e?.message || "Ошибка создания";
-                        } finally {
-                            this.loading = false;
-                        }
-                    },
-                }));
+                            try {
+                                if (!this.form.user) {
+                                    throw new Error("Выберите пользователя");
+                                }
+
+                                await create("example", {
+                                    name: this.form.name,
+                                    age: Number(this.form.age) || 0,
+                                    isMaried: !!this.form.isMaried,
+                                    user: this.form.user,
+                                });
+
+                                const selectedUser = this.form.user;
+                                this.form = {
+                                    name: "",
+                                    age: 18,
+                                    isMaried: false,
+                                    user: selectedUser,
+                                };
+                                this.message = "Запись создана";
+                                await this.load();
+                            } catch (e) {
+                                this.error = e?.message || "Ошибка создания";
+                            } finally {
+                                this.loading = false;
+                            }
+                        },
+                    };
+                });
             };
 
             if (window.Alpine) {
