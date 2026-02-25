@@ -46,10 +46,7 @@
                 </ul>
                 <ul>
                     <li>
-                        <button
-                            type="button"
-                            @click="doLogout()"
-                        >
+                        <button type="button" @click="doLogout()">
                             Выйти
                         </button>
                     </li>
@@ -69,6 +66,11 @@
                 <p>
                     <strong>isAuthed:</strong>
                     <span x-text="isAuthenticated ? 'true' : 'false'"></span>
+                </p>
+
+                <p>
+                    <strong>isAdmin:</strong>
+                    <span x-text="isAdmin ? 'true' : 'false'"></span>
                 </p>
 
                 <h3>Запись</h3>
@@ -94,6 +96,7 @@
                 authRecord,
                 authToken,
                 logout,
+                isMaybeAdmin,
             } from "/assets/pocketbase.core.js";
 
             // Enforce auth immediately on page load.
@@ -102,11 +105,13 @@
             const registerHomePage = () => {
                 Alpine.data("homePage", () => ({
                     isAuthenticated: false,
+                    isAdmin: false,
                     token: "",
                     recordJson: "{}",
                     error: "",
                     init() {
                         try {
+                            this.isAdmin = isMaybeAdmin();
                             this.isAuthenticated = isAuthed();
                             this.token = authToken();
                             this.recordJson = JSON.stringify(

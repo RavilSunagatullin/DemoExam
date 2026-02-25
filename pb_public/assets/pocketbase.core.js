@@ -36,6 +36,10 @@ export function authToken() {
     return pb.authStore?.token || "";
 }
 
+export function isMaybeAdmin() {
+    return pb.authStore?.record?.isAdmin || false;
+}
+
 export function filter(expr, params) {
     // Convenient and safe builder for filter strings
     return pb.filter(expr, params);
