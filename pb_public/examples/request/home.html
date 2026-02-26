@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Едем, но это не точно</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+            window.APP_ROUTES = Object.assign(
+                {
+                    home: "/views/home.html",
+                    createRequest: "/views/request-create.html",
+                    requests: "/views/requests.html",
+                    login: "/auth/login.html",
+                },
+                window.APP_ROUTES || {},
+            );
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <link rel="stylesheet" href="/assets/app.css" />
+    </head>
+    <body>
+        <main class="app-page" x-data="homePage" x-init="init()">
+            <nav>
+                <ul>
+                    <li><strong>Едем, но это не точно</strong></li>
+                </ul>
+                <ul>
+                    <li>
+                        <a :href="pbUrl" target="_blank" rel="noreferrer">PocketBase</a>
+                    </li>
+                    <li>
+                        <button id="logoutBtn" type="button" @click="doLogout()">
+                            Выйти
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+
+            <article class="app-hero app-fade-in">
+                <header>
+                    <h1 style="margin-bottom: 0.25rem">Личный кабинет</h1>
+                    <p class="app-muted" style="margin: 0">
+                        Запись на тест-драйв автомобиля перед покупкой
+                    </p>
+                </header>
+
+                <div class="app-grid cols-2" style="margin-top: 1rem">
+                    <section>
+                        <h3 style="margin-top: 0">Пользователь</h3>
+                        <div class="app-kv">
+                            <div class="app-muted">ФИО</div>
+                            <div x-text="me?.userFIO || '—'"></div>
+                            <div class="app-muted">Телефон</div>
+                            <div x-text="me?.phone || '—'"></div>
+                            <div class="app-muted">Email</div>
+                            <div x-text="me?.email || '—'"></div>
+                            <div class="app-muted">Логин</div>
+                            <div x-text="me?.loginCyr || '—'"></div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 style="margin-top: 0">Действия</h3>
+                        <div class="app-grid">
+                            <a role="button" :href="routes.createRequest">
+                                Оставить новую заявку
+                            </a>
+                            <a class="secondary" role="button" :href="routes.requests">
+                                История заявок
+                            </a>
+                            <a
+                                class="secondary"
+                                role="button"
+                                :href="pbUrl"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Открыть PocketBase (для проверки)
+                            </a>
+                        </div>
+                    </section>
+                </div>
+            </article>
+
+            <article x-show="error" x-cloak>
+                <header><strong>Ошибка</strong></header>
+                <p x-text="error"></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import {
+                requireAuth,
+                authRecord,
+                logout,
+            } from "/assets/pocketbase.core.js";
+            import { pbAdminUrl, toast } from "/assets/app.js";
+
+            requireAuth({ loginPath: window.APP_ROUTES.login });
+
+            const registerHomePage = () => {
+                Alpine.data("homePage", () => ({
+                    routes: window.APP_ROUTES,
+                    me: null,
+                    pbUrl: pbAdminUrl(),
+                    error: "",
+                    init() {
+                        try {
+                            this.me = authRecord();
+                        } catch (e) {
+                            this.error = e?.message || "Ошибка инициализации";
+                            toast(this.error, { kind: "error" });
+                        }
+                    },
+                    doLogout() {
+                        logout();
+                        location.replace(this.routes.login);
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerHomePage();
+            } else {
+                document.addEventListener("alpine:init", registerHomePage, {
+                    once: true,
+                });
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>

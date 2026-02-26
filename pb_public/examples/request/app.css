@@ -1,0 +1,107 @@
+/*
+  Demo Exam UI layer (PicoCSS + light enhancements)
+  Keep it small, readable and responsive (mobile-first).
+*/
+
+:root {
+    --app-max: 920px;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+.app-page {
+    max-width: var(--app-max);
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.app-hero {
+    padding: 1.25rem;
+}
+
+.app-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+@media (min-width: 760px) {
+    .app-grid.cols-2 {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+}
+
+.app-muted {
+    opacity: 0.8;
+}
+
+.app-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.app-badge.pending {
+    background: rgba(100, 116, 139, 0.12);
+}
+
+.app-badge.approved {
+    background: rgba(34, 197, 94, 0.12);
+}
+
+.app-badge.completed {
+    background: rgba(59, 130, 246, 0.12);
+}
+
+.app-badge.rejected {
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.app-fade-in {
+    animation: appFadeIn 260ms ease-out;
+}
+
+@keyframes appFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.app-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    z-index: 9999;
+    width: min(560px, calc(100% - 24px));
+}
+
+.app-toast > article {
+    margin: 0;
+    padding: 0.75rem 0.9rem;
+}
+
+.app-kv {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 0.4rem 0.75rem;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 420px) {
+    .app-kv {
+        grid-template-columns: 1fr;
+    }
+}

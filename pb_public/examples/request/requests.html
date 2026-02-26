@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>История заявок</title>
+
+        <script>
+            window.PB_BASE_URL = window.PB_BASE_URL || "http://127.0.0.1:8090";
+            window.APP_ROUTES = Object.assign(
+                {
+                    home: "/views/home.html",
+                    createRequest: "/views/request-create.html",
+                    requests: "/views/requests.html",
+                    login: "/auth/login.html",
+                },
+                window.APP_ROUTES || {},
+            );
+        </script>
+
+        <link rel="stylesheet" href="/assets/pico.min.css" />
+        <link rel="stylesheet" href="/assets/app.css" />
+    </head>
+    <body>
+        <main class="app-page" x-data="requestsPage" x-init="init()">
+            <nav>
+                <ul>
+                    <li><a :href="routes.home">Главная</a></li>
+                    <li><strong>История заявок</strong></li>
+                </ul>
+                <ul>
+                    <li>
+                        <a :href="pbUrl" target="_blank" rel="noreferrer">PocketBase</a>
+                    </li>
+                    <li>
+                        <button type="button" @click="doLogout()">Выйти</button>
+                    </li>
+                </ul>
+            </nav>
+
+            <article class="app-fade-in">
+                <header>
+                    <h1 style="margin-bottom: 0.25rem">Мои заявки</h1>
+                    <p class="app-muted" style="margin: 0">
+                        Здесь отображаются все заявки текущего пользователя
+                    </p>
+                </header>
+
+                <div class="app-grid cols-2" style="margin-top: 1rem">
+                    <div>
+                        <label>Фильтр по статусу</label>
+                        <select x-model="status" @change="reload(1)">
+                            <option value="" selected>Все</option>
+                            <option value="pending">На рассмотрении</option>
+                            <option value="approved">Одобрено</option>
+                            <option value="completed">Выполнено</option>
+                            <option value="rejected">Отклонено</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Поиск</label>
+                        <input
+                            type="search"
+                            placeholder="марка, модель, адрес"
+                            x-model.trim="q"
+                            @input.debounce.350ms="reload(1)"
+                        />
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem" class="app-grid">
+                    <a role="button" :href="routes.createRequest">
+                        Оставить новую заявку
+                    </a>
+                </div>
+
+                <hr />
+
+                <p x-show="loading" x-cloak>Загрузка...</p>
+                <p x-show="!loading && items.length === 0" x-cloak>
+                    Пока нет заявок. Создайте первую заявку.
+                </p>
+
+                <div class="app-grid" style="margin-top: 1rem">
+                    <template x-for="it in items" :key="it.id">
+                        <article style="margin: 0">
+                            <header style="display:flex; gap: .75rem; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                                <div>
+                                    <strong>
+                                        <span x-text="carTitle(it)"></span>
+                                    </strong>
+                                    <div class="app-muted" style="margin-top: 0.15rem">
+                                        <small>
+                                            Дата/время: <span x-text="fmt(it.desiredAt)"></span>
+                                        </small>
+                                    </div>
+                                </div>
+                                <span
+                                    class="app-badge"
+                                    :class="badgeClass(it.status)"
+                                >
+                                    <span x-text="statusText(it.status)"></span>
+                                </span>
+                            </header>
+
+                            <div class="app-kv">
+                                <div class="app-muted">Адрес</div>
+                                <div x-text="it.address || '—'"></div>
+                                <div class="app-muted">Оплата</div>
+                                <div x-text="paymentText(it.paymentType)"></div>
+                                <div class="app-muted">Контакты</div>
+                                <div>
+                                    <div x-text="it.fio"></div>
+                                    <small class="app-muted">
+                                        <span x-text="it.phone"></span> ·
+                                        <span x-text="it.email"></span>
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div x-show="it.status === 'rejected'" x-cloak style="margin-top: .75rem">
+                                <strong>Причина отклонения:</strong>
+                                <span x-text="it.rejectionReason || '—'"></span>
+                            </div>
+                        </article>
+                    </template>
+                </div>
+
+                <div
+                    style="display:flex; gap:.75rem; justify-content: center; align-items:center; margin-top: 1rem; flex-wrap: wrap;"
+                    x-show="!loading && totalPages > 1"
+                    x-cloak
+                >
+                    <button
+                        class="secondary"
+                        type="button"
+                        @click="reload(page-1)"
+                        :disabled="page <= 1"
+                    >
+                        Назад
+                    </button>
+                    <span class="app-muted">
+                        Страница <strong x-text="page"></strong> из
+                        <strong x-text="totalPages"></strong>
+                    </span>
+                    <button
+                        class="secondary"
+                        type="button"
+                        @click="reload(page+1)"
+                        :disabled="page >= totalPages"
+                    >
+                        Вперёд
+                    </button>
+                </div>
+
+                <p class="error-text" x-show="error" x-text="error" x-cloak></p>
+            </article>
+        </main>
+
+        <script src="/assets/pocketbase.umd.js"></script>
+        <script type="module">
+            import {
+                pb,
+                requireAuth,
+                authRecord,
+                filter,
+                logout,
+            } from "/assets/pocketbase.core.js";
+            import {
+                pbAdminUrl,
+                consumeFlash,
+                toast,
+                formatDateTime,
+                statusLabel,
+                statusClass,
+            } from "/assets/app.js";
+
+            requireAuth({ loginPath: window.APP_ROUTES.login });
+
+            const registerPage = () => {
+                Alpine.data("requestsPage", () => ({
+                    routes: window.APP_ROUTES,
+                    pbUrl: pbAdminUrl(),
+                    loading: false,
+                    error: "",
+                    items: [],
+
+                    status: "",
+                    q: "",
+
+                    page: 1,
+                    perPage: 10,
+                    totalPages: 1,
+
+                    async init() {
+                        const flash = consumeFlash();
+                        if (flash?.message) toast(flash.message, { kind: flash.kind || "info" });
+                        await this.reload(1);
+                    },
+
+                    doLogout() {
+                        logout();
+                        location.replace(this.routes.login);
+                    },
+
+                    fmt(iso) {
+                        return formatDateTime(iso);
+                    },
+
+                    statusText(s) {
+                        return statusLabel(s);
+                    },
+
+                    badgeClass(s) {
+                        return statusClass(s);
+                    },
+
+                    paymentText(v) {
+                        return v === "cash"
+                            ? "Наличными"
+                            : v === "card"
+                              ? "Картой"
+                              : v || "—";
+                    },
+
+                    carTitle(it) {
+                        const car = it?.expand?.car;
+                        if (car?.brand && car?.model) return `${car.brand} ${car.model}`;
+                        return it?.carTitle || "Автомобиль";
+                    },
+
+                    buildFilter() {
+                        const me = authRecord();
+                        const parts = [filter("user={:id}", { id: me?.id })];
+                        if (this.status) parts.push(filter("status={:s}", { s: this.status }));
+
+                        const q = (this.q || "").trim();
+                        if (q) {
+                            // Light search by address and contact fields.
+                            const qq = `%${q}%`;
+                            parts.push(
+                                filter(
+                                    "address~{:q} || fio~{:q} || email~{:q} || phone~{:q}",
+                                    { q: qq },
+                                ),
+                            );
+                        }
+
+                        return parts.filter(Boolean).join(" && ");
+                    },
+
+                    async reload(page) {
+                        this.loading = true;
+                        this.error = "";
+                        try {
+                            this.page = Math.max(1, Number(page || 1));
+                            const res = await pb
+                                .collection("requests")
+                                .getList(this.page, this.perPage, {
+                                    sort: "-created",
+                                    filter: this.buildFilter(),
+                                    expand: "car",
+                                });
+
+                            this.items = res?.items || [];
+                            this.totalPages = res?.totalPages || 1;
+                        } catch (e) {
+                            this.error = e?.message || "Не удалось загрузить заявки";
+                            toast(this.error, { kind: "error" });
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                }));
+            };
+
+            if (window.Alpine) {
+                registerPage();
+            } else {
+                document.addEventListener("alpine:init", registerPage, {
+                    once: true,
+                });
+            }
+        </script>
+        <script src="/assets/alpine.min.js" defer></script>
+    </body>
+</html>
