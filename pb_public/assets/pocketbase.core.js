@@ -14,6 +14,23 @@ export const BASE_URL = (window.PB_BASE_URL || DEFAULT_BASE_URL).replace(
     "",
 );
 
+// Shared validation patterns for auth forms.
+export const VALIDATION_PATTERNS = Object.freeze({
+    fio: "^[\\u0401\\u0451\\u0410-\\u042F\\u0430-\\u044F]+(?:\\s+[\\u0401\\u0451\\u0410-\\u042F\\u0430-\\u044F]+)+$",
+    fioLatinCyrillic:
+        "^[A-Za-z\\u0401\\u0451\\u0410-\\u042F\\u0430-\\u044F]+(?:\\s+[A-Za-z\\u0401\\u0451\\u0410-\\u042F\\u0430-\\u044F]+)+$",
+    phone: "^\\+7 \\([0-9]{3}\\) [0-9]{3} [0-9]{2}-[0-9]{2}$",
+    digitsOnly: "^\\d+$",
+});
+
+export const VALIDATION_REGEX = Object.freeze({
+    fio: new RegExp(VALIDATION_PATTERNS.fio),
+    fioLatinCyrillic: new RegExp(VALIDATION_PATTERNS.fioLatinCyrillic),
+    phone: new RegExp(VALIDATION_PATTERNS.phone),
+    digitsOnly: new RegExp(VALIDATION_PATTERNS.digitsOnly),
+    nonDigits: /\D/g,
+});
+
 // --- init client ---
 if (!window.PocketBase) {
     throw new Error(
@@ -221,3 +238,4 @@ function normalizePbError(err) {
     e.raw = err;
     return e;
 }
+
